@@ -37,7 +37,8 @@ def submit_render(dry_run=False):
     streamdata = child.communicate()[0]
     rc = child.returncode
 
-    ffmpeg_rset = assemble_ffmpeg_rset(shot, version)
+    rset_dest = rf"L:\krasse_robots\00_Pipeline\Rendersets\tt_renderset_comp_{shot}_{version}.rset"
+    ffmpeg_rset = assemble_ffmpeg_rset(shot, version, rset_dest)
     ffmpeg_cmd = assemble_ffmpeg_cmd(f"CONVERT_{nice_name}", ffmpeg_rset, rc)
     # subprocess.Popen(ffmpeg_cmd)
 
@@ -48,7 +49,7 @@ def assemble_render_set_name(scene_path):
     path_elem = scene_path.split(os.sep)
     naming_elem = path_elem[-1].split("_")
     nice_name = "_".join(
-        ["Frogging-Comp", path_elem[4], naming_elem[-4], naming_elem[-2]]
+        ["Robo-Comp", path_elem[4], naming_elem[-4], naming_elem[-2]]
     )
     return nice_name
 
@@ -58,11 +59,12 @@ def assemble_cmd(render_name, import_set, scene_path, chunk_size=100):
         [
             f'"{get_renderpal_exe()}"',
             '-login="ca-user:polytopixel"',
-            '-nj_renderer="Nuke/Frog Nuke"',
+            '-nj_renderer="Nuke/Robo Nuke"',
             f'-nj_splitmode="2,{chunk_size}"',
             "-retnjid",
             f'-nj_name="{render_name}"',
-            '-nj_project="Frogging Hell"',
+            '-nj_project="Robo"',
+            '-nj_color "125,158,192"'
             f'-importset="{import_set}"',
             f'"{scene_path}"'
         ]
@@ -74,12 +76,12 @@ def assemble_ffmpeg_cmd(render_name, import_set, dep_id):
         [
             f'"{get_renderpal_exe()}"',
             '-login="ca-user:polytopixel"',
-            '-nj_renderer="Frog FFmpeg/Default version"',
+            '-nj_renderer="Frog FFmpeg/Default"',
             "-retnjid",
             f"-nj_dependency {dep_id}",
             "-nj_deptype 0",
             f'-nj_name="{render_name}"',
-            '-nj_project="Frogging Hell"',
+            '-nj_project="Robo"',
             f'-importset="{import_set}"',
             "FFMPEG"
         ]
@@ -119,7 +121,7 @@ def run_wake_up_bats():
     )
 
 
-def assemble_ffmpeg_rset(shot, version):
+def assemble_ffmpeg_rset(shot, version, destination):
     root_dir = Path(os.path.dirname(os.path.abspath(__file__))).parent
     search_path = nuke_paths.assemble_render_path().replace("####", "%04d")
     parent_path = os.path.dirname(nuke.root().knob("name").value())
@@ -136,9 +138,7 @@ def assemble_ffmpeg_rset(shot, version):
         src = Template(f.read())
         result = src.substitute(d)
 
-    r_set_file = os.path.join(
-        parent_path, f"ffmpeg_render_set_{version}.rnjprs"
-    )
+    r_set_file = os.path.join(destination)
 
     with open(r_set_file, "w") as r_set:
         r_set.write(result)
