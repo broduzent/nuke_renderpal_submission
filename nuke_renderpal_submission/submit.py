@@ -1,3 +1,4 @@
+import json
 import os
 import logging
 import subprocess
@@ -22,8 +23,8 @@ def submit_render(dry_run=False):
     exr_path, mp4_path, outfile = nuke_paths.assemble_render_path()
     render_path = os.path.abspath(os.path.join(exr_path, "..", "..", ".."))
 
-    write1_node = nuke.toNode('Write1')
-    if not write1_node:
+    write_node = nuke.toNode('Write1')
+    if not write_node:
         nuke.alert("You need a 'Write1' node connected to render on the farm, Brudi.")
         return
 
@@ -33,7 +34,6 @@ def submit_render(dry_run=False):
         return
 
     nice_name = nuke_paths.assemble_render_set_name(scene_path)
-    project_name, shot, version, user = nice_name.split("_")
 
     rset_dest = rf"L:\krasse_robots\00_Pipeline\Rendersets\shot_renderset_{outfile}.rset"
 
@@ -81,8 +81,43 @@ def submit_render(dry_run=False):
         deptype=0,
         color="125,158,192"
     )
+    nuke.message(f"Submitted FFmpeg-job ({ffmpeg_jid})")
 
-    nuke.message(f"Submitted {nice_name} ({ffmpeg_jid})")
+    project_name, shot, version, user = nice_name.split("_")
+
+    user_mapping_path = os.path.join(os.environ.get("PIPELINE_CONFIG_PATH"), "user_mapping.json").replace("\\", "/")
+    with open (user_mapping_path, "r") as f:
+        user_mapping = json.load(f)
+    user=nice_name.split("_")[-1]
+    user_abbr = user_mapping[user]["hdmabbr"]
+
+    kitsu_renderset_dest = rf"L:\krasse_robots\00_Pipeline\Rendersets\shot_renderset_{outfile}_kitsu.rset"
+    kitsu_set = submission.create_renderpal_set(
+        "kitsu_shot_renderset",
+        kitsu_renderset_dest,
+        pythonscript=r"L:/krasse_robots/00_Pipeline/Packages/stupro_pyblish_plugins/kitsu/kitsu_publish_shot.py",
+        sequence_name=shot.split("-")[0],
+        shot_name=shot.split("-")[1],
+        task_name=outfile.split("_")[1],
+        user_name=user_abbr,
+        clippath=os.path.join(mp4_path, f"{outfile}.mp4").replace("\\", "/"),
+        version=version,
+        pipeconfig=os.getenv("PIPELINE_CONFIG_PATH").replace("\\", "/"),
+        gazu_root="L:/krasse_robots/00_Pipeline/Packages/gazu_patched"
+    )
+
+    kitsu_jid = submission.submit(
+        f"KITSU_{nice_name}",
+        "Kitsu_Shot_Publish",
+        "ca-user:polytopixel",
+        "Python3/Kitsu Shot Publish",
+        import_set=kitsu_set,
+        project="Robo",
+        dependency=ffmpeg_jid,
+        deptype=0,
+        color="125,158,192"
+    )
+    nuke.message(f"Submitted Kitsu-job ({kitsu_jid})")
 
 
 def assemble_cmd(render_name, import_set, scene_path, chunk_size=100):
