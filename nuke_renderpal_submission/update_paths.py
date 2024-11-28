@@ -10,7 +10,7 @@ def assemble_render_path(scene_path=None):
     if not scene_path:
         scene_path = os.path.normpath(nuke.root().knob('name').value())
     path_elem = scene_path.split(os.sep)
-    path_elem[0] = "M:\\"
+    path_elem[0] = "L:\\"
     naming_elem = path_elem[-1].split("_")
 
     LOGGER.info("Setting Render Paths")

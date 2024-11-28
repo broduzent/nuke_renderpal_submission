@@ -37,7 +37,7 @@ def submit_render(dry_run=False):
     streamdata = child.communicate()[0]
     rc = child.returncode
 
-    rset_dest = rf"L:\krasse_robots\00_Pipeline\Rendersets\tt_renderset_comp_{shot}_{version}.rset"
+    rset_dest = rf"L:\krasse_robots\00_Pipeline\Rendersets\tt_renderset_{shot}_{version}_comp.rset"
     ffmpeg_rset = assemble_ffmpeg_rset(shot, version, rset_dest)
     ffmpeg_cmd = assemble_ffmpeg_cmd(f"CONVERT_{nice_name}", ffmpeg_rset, rc)
     # subprocess.Popen(ffmpeg_cmd)
