@@ -31,6 +31,8 @@ def submit_render(dry_run=False):
     mp4_path = os.path.join(out_path, "mp4")
     outfile = f"{shot}_{task}_{version}"
 
+    set_writenode_paths(exr_path, outfile)
+
     if not run_precheck(render_path, exr_path):
         return
 
@@ -164,6 +166,14 @@ def assemble_ffmpeg_rset(shot, version, destination):
         r_set.write(result)
 
     return r_set_file
+
+
+def set_writenode_paths(exr_path, outfile):
+    exr_file = os.path.join(exr_path, f"{outfile}.####.exr").replace("\\", "/")
+    node = nuke.toNode('Write1')
+    if not node:
+        nuke.alert("You need a 'Write1' node connected to render on the farm, Brudi.")
+    node.knob("file").setValue(exr_file)
 
 
 def get_renderpal_exe():
