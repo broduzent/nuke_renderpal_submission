@@ -8,6 +8,7 @@ import nuke
 
 from nuke_renderpal_submission import update_paths as nuke_paths
 from nuke_renderpal_submission.precheck import run_precheck
+from renderpal_submission import submission
 
 logging.basicConfig(level=logging.INFO)
 LOGGER = logging.getLogger("Render Submission")
@@ -18,29 +19,27 @@ LOGGER.addHandler(ch)
 
 def submit_render(dry_run=False):
     scene_path = os.path.normpath(nuke.root().knob('name').value())
-    nice_name = assemble_render_set_name(scene_path)
-    project_name, shot, version, user = nice_name.split("_")
+    exr_path, mp4_path, outfile = nuke_paths.assemble_render_path()
+    render_path = os.path.abspath(os.path.join(exr_path, "..", "..", ".."))
 
-    path_elements = os.path.normpath(scene_path).split(os.sep)
-    path_elements[0] = "L:/"
-    task = path_elements[-2]
-    base_path = os.path.join(*path_elements[:-4]).replace("\\", "/")
-    render_path = os.path.join(base_path, "Rendering")
-    out_path = os.path.join(render_path, "2dRender", task, version)
-    exr_path = os.path.join(out_path, "exr")
-    mp4_path = os.path.join(out_path, "mp4")
-    outfile = f"{shot}_{task}_{version}"
+    nuke_paths.update_write_nodes(exr_path, outfile)
 
-    set_writenode_paths(exr_path, outfile)
+    write1_node = nuke.toNode('Write1')
+    if not write1_node:
+        nuke.alert("You need a 'Write1' node connected to render on the farm, Brudi.")
 
     if not run_precheck(render_path, exr_path):
         return
 
+    nice_name = nuke_paths.assemble_render_set_name(scene_path)
+    project_name, shot, version, user = nice_name.split("_")
+
     write_node = "Write1"
+    rset_dest = rf"L:\krasse_robots\00_Pipeline\Rendersets\shot_renderset_{outfile}.rset"
 
     cmd = assemble_cmd(
         nice_name,
-        create_import_set(scene_path, write_node),
+        create_import_set(write_node, rset_dest),
         scene_path
     )
 
@@ -53,24 +52,37 @@ def submit_render(dry_run=False):
     nuke.scriptSave()
     run_wake_up_bats()
     child = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    streamdata = child.communicate()[0]
-    rc = child.returncode
+    stdout_data, stderr_data = child.communicate()
 
-    rset_dest = rf"L:\krasse_robots\00_Pipeline\Rendersets\tt_renderset_{shot}_{version}_comp.rset"
-    ffmpeg_rset = assemble_ffmpeg_rset(shot, version, rset_dest)
-    ffmpeg_cmd = assemble_ffmpeg_cmd(f"CONVERT_{nice_name}", ffmpeg_rset, rc)
-    # subprocess.Popen(ffmpeg_cmd)
+    if child.returncode == 1:
+        LOGGER.error(f"Submission failed with {stderr_data}")
+        return
 
-    nuke.message(f"Submitted {nice_name} ({rc})")
+    job_id = child.returncode
+    LOGGER.info(f"Submitted {nice_name} (id: {job_id})")
 
-
-def assemble_render_set_name(scene_path):
-    path_elem = scene_path.split(os.sep)
-    naming_elem = path_elem[-1].split("_")
-    nice_name = "_".join(
-        ["Robo-Comp", path_elem[4], naming_elem[-4], naming_elem[-2]]
+    ffmpeg_renderset_dest = rf"L:\krasse_robots\00_Pipeline\Rendersets\shot_renderset_{outfile}_ffmpeg.rset"
+    ffmpeg_set = submission.create_renderpal_set(
+        "ffmpeg_renderset",
+        ffmpeg_renderset_dest,
+        out_dir=mp4_path.replace("\\", "/"),
+        out_file=f"{outfile}.mp4",
+        input=f'{exr_path}\\{outfile}.%04d.exr'.replace("\\", "/"),
+        start_frame=1001
     )
-    return nice_name
+    ffmpeg_jid = submission.submit(
+        f"CONVERT_{nice_name}",
+        "FFMPEG",
+        "ca-user:polytopixel",
+        "Frog FFmpeg/Default",
+        import_set=ffmpeg_set,
+        project="Robo",
+        dependency=job_id,
+        deptype=0,
+        color="125,158,192"
+    )
+
+    nuke.message(f"Submitted {nice_name} ({ffmpeg_jid})")
 
 
 def assemble_cmd(render_name, import_set, scene_path, chunk_size=100):
@@ -107,8 +119,7 @@ def assemble_ffmpeg_cmd(render_name, import_set, dep_id):
     )
 
 
-def create_import_set(scene_path, writenode):
-    parent_path = os.path.dirname(scene_path)
+def create_import_set(writenode, destination):
     content = """
     <RenderSet>
         <Values>
@@ -121,7 +132,7 @@ def create_import_set(scene_path, writenode):
         </Values>
     </RenderSet>
     """.format(*get_frame_ramge(), writenode)
-    r_set_file = os.path.join(parent_path, "renderpal.rset")
+    r_set_file = destination
 
     with open(r_set_file, "w") as r_set:
         r_set.write(content)
@@ -166,14 +177,6 @@ def assemble_ffmpeg_rset(shot, version, destination):
         r_set.write(result)
 
     return r_set_file
-
-
-def set_writenode_paths(exr_path, outfile):
-    exr_file = os.path.join(exr_path, f"{outfile}.####.exr").replace("\\", "/")
-    node = nuke.toNode('Write1')
-    if not node:
-        nuke.alert("You need a 'Write1' node connected to render on the farm, Brudi.")
-    node.knob("file").setValue(exr_file)
 
 
 def get_renderpal_exe():
