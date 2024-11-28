@@ -7,6 +7,7 @@ from pathlib import Path
 import nuke
 
 from nuke_renderpal_submission import update_paths as nuke_paths
+from nuke_renderpal_submission.precheck import run_precheck
 
 logging.basicConfig(level=logging.INFO)
 LOGGER = logging.getLogger("Render Submission")
@@ -19,9 +20,25 @@ def submit_render(dry_run=False):
     scene_path = os.path.normpath(nuke.root().knob('name').value())
     nice_name = assemble_render_set_name(scene_path)
     project_name, shot, version, user = nice_name.split("_")
+
+    path_elements = os.path.normpath(scene_path).split(os.sep)
+    path_elements[0] = "L:/"
+    task = path_elements[-2]
+    base_path = os.path.join(*path_elements[:-4]).replace("\\", "/")
+    render_path = os.path.join(base_path, "Rendering")
+    out_path = os.path.join(render_path, "2dRender", task, version)
+    exr_path = os.path.join(out_path, "exr")
+    mp4_path = os.path.join(out_path, "mp4")
+    outfile = f"{shot}_{task}_{version}"
+
+    if not run_precheck(render_path, exr_path):
+        return
+
+    write_node = "Write1"
+
     cmd = assemble_cmd(
         nice_name,
-        create_import_set(scene_path),
+        create_import_set(scene_path, write_node),
         scene_path
     )
 
@@ -88,7 +105,7 @@ def assemble_ffmpeg_cmd(render_name, import_set, dep_id):
     )
 
 
-def create_import_set(scene_path):
+def create_import_set(scene_path, writenode):
     parent_path = os.path.dirname(scene_path)
     content = """
     <RenderSet>
@@ -96,9 +113,12 @@ def create_import_set(scene_path):
             <frames>
                 <Value>{0}-{1}</Value>
             </frames>
+            <writenode>
+                <Value>{2}</Value>
+            </writenode>
         </Values>
     </RenderSet>
-    """.format(*get_frame_ramge())
+    """.format(*get_frame_ramge(), writenode)
     r_set_file = os.path.join(parent_path, "renderpal.rset")
 
     with open(r_set_file, "w") as r_set:
