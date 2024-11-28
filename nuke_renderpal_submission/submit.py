@@ -22,11 +22,12 @@ def submit_render(dry_run=False):
     exr_path, mp4_path, outfile = nuke_paths.assemble_render_path()
     render_path = os.path.abspath(os.path.join(exr_path, "..", "..", ".."))
 
-    nuke_paths.update_write_nodes(exr_path, outfile)
-
     write1_node = nuke.toNode('Write1')
     if not write1_node:
         nuke.alert("You need a 'Write1' node connected to render on the farm, Brudi.")
+        return
+
+    nuke_paths.update_write_nodes(exr_path, outfile)
 
     if not run_precheck(render_path, exr_path):
         return
@@ -34,7 +35,6 @@ def submit_render(dry_run=False):
     nice_name = nuke_paths.assemble_render_set_name(scene_path)
     project_name, shot, version, user = nice_name.split("_")
 
-    write_node = "Write1"
     rset_dest = rf"L:\krasse_robots\00_Pipeline\Rendersets\shot_renderset_{outfile}.rset"
 
     cmd = assemble_cmd(

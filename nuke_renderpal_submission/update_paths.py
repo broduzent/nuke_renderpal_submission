@@ -32,31 +32,12 @@ def assemble_render_path(scene_path=None):
 
 
 def update_write_nodes(exr_path, outfile):
-    updated_nodes = []
-
-    if not nuke.selectedNodes():
-        nuke.alert("Select a Write node to submit it to the Farm!")
-        assert False
-
-    for node in nuke.selectedNodes():
-        if node.Class() != "Write":
-            continue
-
-        current_path = node.knob("file").value()
-        expected_path = os.path.join(exr_path, f"{outfile}.####.exr")
-        if not current_path == expected_path:
-            os.makedirs(os.path.dirname(expected_path), exist_ok=True)
-            node.knob("file").setValue(expected_path.replace("\\", "/"))
-            updated_nodes.append(node)
-
-    if len(updated_nodes) == 0:
-        nuke.message("No nodes were updated")
-    else:
-        message_string = f"{len(updated_nodes)} nodes were updated:\n\n"
-        for node in updated_nodes:
-            message_string += f"{node.name()} \n"
-
-        nuke.message(message_string)
+    node = nuke.toNode('Write1')
+    current_path = node.knob("file").value()
+    expected_path = os.path.join(exr_path, f"{outfile}.####.exr")
+    if not current_path == expected_path:
+        os.makedirs(os.path.dirname(expected_path), exist_ok=True)
+        node.knob("file").setValue(expected_path.replace("\\", "/"))
 
 
 def assemble_render_set_name(scene_path):
