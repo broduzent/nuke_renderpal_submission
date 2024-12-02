@@ -95,7 +95,7 @@ def submit_render(dry_run=False):
     kitsu_set = submission.create_renderpal_set(
         "kitsu_shot_renderset",
         kitsu_renderset_dest,
-        pythonscript=r"L:/krasse_robots/00_Pipeline/Packages/stupro_pyblish_plugins/kitsu/kitsu_publish_shot.py",
+        pythonscript=r"L:/krasse_robots/00_Pipeline/Packages/renderpal_submission/renderpal_submission/kitsu/kitsu_publish_shot.py",
         sequence_name=shot.split("-")[0],
         shot_name=shot.split("-")[1],
         task_name=outfile.split("_")[1],
