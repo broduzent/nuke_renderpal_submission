@@ -28,10 +28,10 @@ def submit_render(dry_run=False):
         nuke.alert("You need a 'Write1' node connected to render on the farm, Brudi.")
         return
 
-    nuke_paths.update_write_nodes(exr_path, outfile)
-
     if not run_precheck(render_path, exr_path):
         return
+
+    nuke_paths.update_write_nodes(exr_path, outfile)
 
     nice_name = nuke_paths.assemble_render_set_name(scene_path)
 
