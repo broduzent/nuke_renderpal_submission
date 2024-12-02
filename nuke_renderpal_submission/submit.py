@@ -32,7 +32,7 @@ def submit_render(dry_run=False):
         return
 
     nuke_paths.update_write_nodes(exr_path, outfile)
-    nuke_paths.update_write_nodes(mp4_path, outfile)
+    os.makedirs(mp4_path, exist_ok=True)
 
     nice_name = nuke_paths.assemble_render_set_name(scene_path)
 
