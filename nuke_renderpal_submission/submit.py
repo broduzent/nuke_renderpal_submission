@@ -75,7 +75,7 @@ def submit_render(dry_run=False):
     )
     imgconvert_jid = submission.submit(
         f"CONVERT_{nice_name}",
-        "IMGCONVERT",
+        "",
         "ca-user:polytopixel",
         "Nuke/Imgconvert",
         import_set=imgconvert_set,
