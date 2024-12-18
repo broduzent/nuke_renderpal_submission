@@ -75,7 +75,7 @@ def submit_render(dry_run=False):
     )
     imgconvert_jid = submission.submit(
         f"CONVERT_{nice_name}",
-        "",
+        " ",
         "ca-user:polytopixel",
         "Nuke/Imgconvert",
         import_set=imgconvert_set,
@@ -84,7 +84,7 @@ def submit_render(dry_run=False):
         deptype=0,
         color="125,158,192"
     )
-    nuke.message(f"Submitted FFmpeg-job ({imgconvert_jid})")
+    nuke.message(f"Submitted Imgconvert-job ({imgconvert_jid})")
 
     project_name, shot, version, user = nice_name.split("_")
 
