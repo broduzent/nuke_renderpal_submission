@@ -116,7 +116,7 @@ def submit_render(dry_run=False):
         "Python3/Kitsu Shot Publish",
         import_set=kitsu_set,
         project="Robo",
-        dependency=ffmpeg_jid,
+        dependency=imgconvert_jid,
         deptype=0,
         color="125,158,192"
     )
