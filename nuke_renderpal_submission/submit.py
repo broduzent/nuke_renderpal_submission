@@ -62,27 +62,29 @@ def submit_render(dry_run=False):
     job_id = child.returncode
     LOGGER.info(f"Submitted {nice_name} (id: {job_id})")
 
-    ffmpeg_renderset_dest = rf"L:\krasse_robots\00_Pipeline\Rendersets\shot_renderset_{outfile}_ffmpeg.rset"
-    ffmpeg_set = submission.create_renderpal_set(
-        "ffmpeg_renderset",
-        ffmpeg_renderset_dest,
-        out_dir=mp4_path.replace("\\", "/"),
-        out_file=f"{outfile}.mp4",
-        input=f'{exr_path}\\{outfile}.%04d.exr'.replace("\\", "/"),
-        start_frame=1001
+    imgconvert_renderset_dest = f"L:/krasse_robots/00_Pipeline/Rendersets/shot_renderset_{outfile}_imgconvert.rset"
+    imgconvert_set = submission.create_renderpal_set(
+        "imgconvert_renderset",
+        imgconvert_renderset_dest,
+        in_pattern=f'{exr_path}/{outfile}.####.exr'.replace("\\", "/"),
+        out_file=f"{mp4_path}/{outfile}.mp4".replace("\\", "/"),
+        start_frame=f"frame{nuke.toNode("Read1")["first"].value()}",
+        end_frame=f"frame{nuke.toNode("Read1")["last"].value()}",
+        colorspace=1,
+        pythonscript="L:/krasse_robots/00_Pipeline/Packages/renderpal_submission/renderpal_submission/autocomp/imgconvert.py"
     )
-    ffmpeg_jid = submission.submit(
+    imgconvert_jid = submission.submit(
         f"CONVERT_{nice_name}",
-        "FFMPEG",
+        "IMGCONVERT",
         "ca-user:polytopixel",
-        "Frog FFmpeg/Default",
-        import_set=ffmpeg_set,
+        "Nuke/Imgconvert",
+        import_set=imgconvert_set,
         project="Robo",
         dependency=job_id,
         deptype=0,
         color="125,158,192"
     )
-    nuke.message(f"Submitted FFmpeg-job ({ffmpeg_jid})")
+    nuke.message(f"Submitted FFmpeg-job ({imgconvert_jid})")
 
     project_name, shot, version, user = nice_name.split("_")
 
