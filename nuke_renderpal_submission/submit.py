@@ -68,8 +68,8 @@ def submit_render(dry_run=False):
         imgconvert_renderset_dest,
         in_pattern=f'{exr_path}/{outfile}.####.exr'.replace("\\", "/"),
         out_file=f"{mp4_path}/{outfile}.mp4".replace("\\", "/"),
-        start_frame=f"frame{nuke.toNode("Read1")["first"].value()}",
-        end_frame=f"frame{nuke.toNode("Read1")["last"].value()}",
+        start_frame=f"frame{nuke.toNode('Read1')['first'].value()}",
+        end_frame=f"frame{nuke.toNode('Read1')['last'].value()}",
         colorspace=2,
         pythonscript="L:/krasse_robots/00_Pipeline/Packages/renderpal_submission/renderpal_submission/autocomp/imgconvert.py"
     )
