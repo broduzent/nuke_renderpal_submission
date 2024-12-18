@@ -70,7 +70,7 @@ def submit_render(dry_run=False):
         out_file=f"{mp4_path}/{outfile}.mp4".replace("\\", "/"),
         start_frame=f"frame{nuke.toNode('Read1')['first'].value()}",
         end_frame=f"frame{nuke.toNode('Read1')['last'].value()}",
-        colorspace=2,
+        colorspace="srgb",
         pythonscript="L:/krasse_robots/00_Pipeline/Packages/renderpal_submission/renderpal_submission/autocomp/imgconvert.py"
     )
     imgconvert_jid = submission.submit(
