@@ -104,7 +104,7 @@ def submit_render(dry_run=False):
         task_name=outfile.split("_")[1],
         user_name=user_abbr,
         clippath=os.path.join(mp4_path, f"{outfile}.mp4").replace("\\", "/"),
-        version=version,
+        version=int(version[-4:]),
         pipeconfig=os.getenv("PIPELINE_CONFIG_PATH").replace("\\", "/"),
         gazu_root="L:/krasse_robots/00_Pipeline/Packages/gazu_patched"
     )
